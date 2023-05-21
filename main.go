@@ -17,26 +17,26 @@ type Envs struct {
 	NotionDatabaseID string
 }
 
-var envs Envs
-
-func init() {
+func loadEnv() Envs {
 	// read .env file if present
 	if err := godotenv.Load(".env"); err != nil {
 		panic(err)
 	}
 
 	// get envs
-	envs = Envs{
+	return Envs{
 		TelegramBotToken: getEnv("TELEGRAM_BOT_TOKEN"),
 		NotionSecret:     getEnv("NOTION_SECRET"),
 		NotionDatabaseID: getEnv("NOTION_DATABASE_ID"),
 	}
 }
+
 func getEnv(name string) string {
 	return os.Getenv(name)
 }
 
 func main() {
+	envs := loadEnv()
 	bot, err := tgbotapi.NewBotAPI(envs.TelegramBotToken)
 	if err != nil {
 		log.Panic(err)
@@ -56,14 +56,14 @@ func main() {
 		if update.Message != nil { // If we got a message
 			log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
 
-			amount, category := extract(update.Message.Text)
+			amount, category, title := extract(update.Message.Text)
 			if amount != 0 && category != "" {
-				err := notion.Send(amount, category)
+				err := notion.Send(amount, category, title)
 				if err != nil {
 					log.Println(err)
 				}
 			}
-			messageText := fmt.Sprintf("%.2f THB in %s would be add to notion expenses database", amount, category)
+			messageText := fmt.Sprintf("฿ %.2f in %s added.", amount, category)
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, messageText)
 			msg.ReplyToMessageID = update.Message.MessageID
 			bot.Send(msg)
@@ -71,17 +71,24 @@ func main() {
 	}
 }
 
-func extract(s string) (float64, string) {
-	reg := regexp.MustCompile(`[\d]+[ftcg]`)
-	//  return 1234, g
-	amount := reg.FindString(s)
-	amountInt, _ := strconv.ParseFloat(amount[:len(amount)-1], 64)
-	category := category(amount[len(amount)-1:])
-	return amountInt, category
+func extract(s string) (amount float64, category, title string) {
+	reg := regexp.MustCompile(`^(\d+(?:\.\d{1,2})?)([ftcgbm])\s*(.+)?$`)
+	// capture group 0: amount
+	subMatchs := reg.FindStringSubmatch(s)
+	amountStr := subMatchs[1]
+	category = getCategory(subMatchs[2])
+	if len(subMatchs) > 3 && subMatchs[3] != "" {
+		title = subMatchs[3]
+	}
+
+	amount, _ = strconv.ParseFloat(amountStr, 64)
+	return amount, category, title
 }
 
-func category(s string) string {
+func getCategory(s string) string {
 	switch s {
+	case "b":
+		return "beverage"
 	case "f":
 		return "food"
 	case "t":
@@ -90,7 +97,9 @@ func category(s string) string {
 		return "clothes"
 	case "g":
 		return "grocery"
-	default:
+	case "m":
 		return "misc"
+	default:
+		return "unknown"
 	}
 }

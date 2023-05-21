@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -21,17 +22,23 @@ func NewNotion(databaseID string, token string) *Notion {
 	}
 }
 
-func (n *Notion) Send(amount float64, category string) error {
+func (n *Notion) Send(amount float64, category, title string) error {
+	props := map[string]interface{}{
+		"amount":   NewAmountProperty(amount),
+		"category": NewCategoryProperty(category),
+	}
+
+	if title != "" {
+		props["title"] = NewTitleProperty(title)
+	} else {
+		props["title"] = NewTitleProperty(fmt.Sprintf("฿ %.2f spend with %s", amount, category))
+	}
 	payload := NotionPostPayload{
 		Parent: Parent{
 			Type:       "database_id",
 			DatabaseID: n.DatabaseID,
 		},
-		Properties: map[string]interface{}{
-			"title":    NewTitleProperty("test"),
-			"amount":   NewAmountProperty(amount),
-			"category": NewCategoryProperty(category),
-		},
+		Properties: props,
 	}
 	payloadBytes, _ := json.Marshal(payload)
 	payloadReader := bytes.NewReader(payloadBytes)
@@ -44,15 +51,15 @@ func (n *Notion) Send(amount float64, category string) error {
 	}
 	resp, err := n.http.Do(req)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Println(err.Error())
 		return err
 	}
 
 	defer resp.Body.Close()
-	fmt.Println(resp.StatusCode)
+	log.Println(resp.StatusCode)
 	respBody := make(map[string]interface{})
 	json.NewDecoder(resp.Body).Decode(&respBody)
-	fmt.Printf("%v \n", respBody)
+	log.Printf("%v \n", respBody)
 	return nil
 }
 
