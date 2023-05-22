@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0](https://github.com/anwam/jaravisa-tg-bot/compare/v1.1.0...v1.2.0) (2023-05-22)
+
+
+### Features
+
+* apply for webhooks ([f9b502a](https://github.com/anwam/jaravisa-tg-bot/commit/f9b502ada69d1696050a73db03e2efd455cee22a))
+
 ## [1.1.0](https://github.com/anwam/jaravisa-tg-bot/compare/v1.0.1...v1.1.0) (2023-05-21)
 
 
