@@ -10,10 +10,13 @@ COPY . .
 
 RUN go build -o main .
 
-FROM busybox:1.36.1 as runner
+FROM debian:buster-slim
+RUN set -x && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+COPY --from=builder /app/main /app/main
 
-COPY --from=builder /app/main .
+COPY .env .
 
-CMD ["./main"]
+CMD ["/app/main"]

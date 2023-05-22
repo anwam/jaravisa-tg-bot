@@ -22,7 +22,7 @@ func NewNotion(databaseID string, token string) *Notion {
 	}
 }
 
-func (n *Notion) Send(amount float64, category, title string) error {
+func (n *Notion) Add(amount float64, category, title string) error {
 	props := map[string]interface{}{
 		"amount":   NewAmountProperty(amount),
 		"category": NewCategoryProperty(category),
