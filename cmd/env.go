@@ -32,6 +32,12 @@ func loadEnv() Envs {
 		port = "8080"
 	}
 
+	// log all envs
+	log.Println("TELEGRAM_BOT_TOKEN:", tgBotToken)
+	log.Println("NOTION_SECRET:", notionSecret)
+	log.Println("NOTION_DATABASE_ID:", notionDatabase)
+	log.Println("PORT:", port)
+
 	log.Println("env loaded")
 
 	// get envs
