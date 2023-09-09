@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"log/slog"
 	"os"
 )
 
@@ -12,19 +12,22 @@ type Envs struct {
 	Port             string
 }
 
-func loadEnv() Envs {
+func loadEnv(logger *slog.Logger) Envs {
 	tgBotToken, ok := os.LookupEnv("TELEGRAM_BOT_TOKEN")
 	if !ok {
-		panic("TELEGRAM_BOT_TOKEN env not set")
+		logger.Error("TELEGRAM_BOT_TOKEN env not set")
+		os.Exit(1)
 	}
 	notionSecret, ok := os.LookupEnv("NOTION_SECRET")
 	if !ok {
-		panic("NOTION_SECRET env not set")
+		logger.Error("NOTION_SECRET env not set")
+		os.Exit(1)
 	}
 
 	notionDatabase, ok := os.LookupEnv("NOTION_DATABASE_ID")
 	if !ok {
-		panic("NOTION_DATABASE_ID env not set")
+		logger.Error("NOTION_DATABASE_ID env not set")
+		os.Exit(1)
 	}
 
 	port, portOK := os.LookupEnv("PORT")
@@ -32,13 +35,7 @@ func loadEnv() Envs {
 		port = "8080"
 	}
 
-	// log all envs
-	log.Println("TELEGRAM_BOT_TOKEN:", tgBotToken)
-	log.Println("NOTION_SECRET:", notionSecret)
-	log.Println("NOTION_DATABASE_ID:", notionDatabase)
-	log.Println("PORT:", port)
-
-	log.Println("env loaded")
+	logger.Info("Env loaded successfully")
 
 	// get envs
 	return Envs{

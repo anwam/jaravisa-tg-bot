@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/anwam/jaravisa-tg-bot/internal/app"
 	"github.com/anwam/jaravisa-tg-bot/internal/notion"
@@ -13,21 +15,21 @@ import (
 )
 
 func main() {
-	log.Println("Starting the application...")
-	envs := loadEnv()
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		AddSource: true,
+	}))
+	logger.Info("Starting the application...")
+	envs := loadEnv(logger)
 
 	bot, err := tgbotapi.NewBotAPI(envs.TelegramBotToken)
 	if err != nil {
-		log.Panic(err.Error())
+		logger.Error(err.Error())
+		os.Exit(1)
 	}
 
-	log.Printf("Authorized on account %s", bot.Self.UserName)
-
-	service := app.NewService(
-		notion.NewNotion(envs.NotionDatabaseID, envs.NotionSecret),
-		bot,
-	)
-
+	logger.Info("Authorized on account %s", bot.Self.UserName)
+	notionHandler := notion.NewNotion(envs.NotionDatabaseID, envs.NotionSecret, logger)
+	service := app.NewService(notionHandler, bot, logger)
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
@@ -39,19 +41,24 @@ func main() {
 	r.Post("/webhooks", func(w http.ResponseWriter, r *http.Request) {
 		tgUpdate := new(tgbotapi.Update)
 		if err := json.NewDecoder(r.Body).Decode(tgUpdate); err != nil {
-			log.Println(err)
+			logger.Error("Error when decoding webhook update", slog.String("errorMessage", err.Error()))
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		if tgUpdate != nil && tgUpdate.Message != nil {
+			logger.LogAttrs(context.Background(), slog.LevelInfo, "message details",
+				slog.Int64("senderId", tgUpdate.Message.From.ID),
+				slog.Int64("chatId", tgUpdate.Message.Chat.ID),
+			)
 			service.HandleWebhook(tgUpdate)
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+
 	})
 	http.ListenAndServe(":"+envs.Port, r)
 }

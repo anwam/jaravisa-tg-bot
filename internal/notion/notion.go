@@ -1,10 +1,7 @@
 package notion
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 )
 
@@ -12,55 +9,17 @@ type Notion struct {
 	http       *http.Client
 	DatabaseID string
 	Token      string
+	logger     *slog.Logger
 }
 
-func NewNotion(databaseID string, token string) *Notion {
+func NewNotion(databaseID string, token string, logger *slog.Logger) *Notion {
+	logger.Info("Notion client created")
 	return &Notion{
 		DatabaseID: databaseID,
 		Token:      token,
 		http:       &http.Client{},
+		logger:     logger,
 	}
-}
-
-func (n *Notion) Add(amount float64, category, title string) error {
-	props := map[string]interface{}{
-		"amount":   NewAmountProperty(amount),
-		"category": NewCategoryProperty(category),
-	}
-
-	if title != "" {
-		props["title"] = NewTitleProperty(title)
-	} else {
-		props["title"] = NewTitleProperty(fmt.Sprintf("฿ %.2f spend with %s", amount, category))
-	}
-	payload := NotionPostPayload{
-		Parent: Parent{
-			Type:       "database_id",
-			DatabaseID: n.DatabaseID,
-		},
-		Properties: props,
-	}
-	payloadBytes, _ := json.Marshal(payload)
-	payloadReader := bytes.NewReader(payloadBytes)
-
-	req, _ := http.NewRequest("POST", "https://api.notion.com/v1/pages", payloadReader)
-	req.Header = http.Header{
-		"Authorization":  []string{"Bearer " + n.Token},
-		"Content-Type":   []string{"application/json"},
-		"Notion-Version": []string{"2022-06-28"},
-	}
-	resp, err := n.http.Do(req)
-	if err != nil {
-		log.Println(err.Error())
-		return err
-	}
-
-	defer resp.Body.Close()
-	log.Println(resp.StatusCode)
-	respBody := make(map[string]interface{})
-	json.NewDecoder(resp.Body).Decode(&respBody)
-	log.Printf("%v \n", respBody)
-	return nil
 }
 
 type Parent struct {
