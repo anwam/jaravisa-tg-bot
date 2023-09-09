@@ -15,9 +15,7 @@ import (
 )
 
 func main() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		AddSource: true,
-	}))
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	logger.Info("Starting the application...")
 	envs := loadEnv(logger)
 

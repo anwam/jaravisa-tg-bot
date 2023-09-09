@@ -70,7 +70,6 @@ func (s *Service) HandleWebhook(update *tgbotapi.Update) error {
 			{
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "abdul command is not implemented yet.")
 				msg.ReplyToMessageID = update.Message.MessageID
-				msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(false)
 				s.tgBot.Send(msg)
 			}
 		default:
@@ -99,8 +98,8 @@ func checkIsExpenseCommand(s string) bool {
 
 func checkIsGPTCommand(s string) bool {
 	reg := regexp.MustCompile(`^(abdul)\s(.+)$`)
-	subMaches := reg.FindStringSubmatch(s)
-	slog.Info("subMatches", strings.Join(subMaches, ","))
+	subMatches := reg.FindStringSubmatch(s)
+	slog.Info("list of sub matches", "subMatches", strings.Join(subMatches, ","))
 	isMatch := reg.MatchString(s)
 	return isMatch
 }
