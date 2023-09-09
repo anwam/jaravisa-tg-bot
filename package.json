@@ -1,15 +1,12 @@
 {
   "name": "jaravisa-tg-bot",
   "version": "1.2.0",
-  "description": "",
+  "description": "Personal Assistant Telegram Bot",
   "main": "index.js",
   "scripts": {
-    "release": "standard-version",
+    "release": "npx standard-version@latest",
     "tag": "git push --follow-tags origin main"
   },
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "standard-version": "^9.5.0"
-  }
+  "author": "Anuwong Mongkudkornburee",
+  "license": "MIT"
 }
